@@ -163,9 +163,15 @@ internal static class ProductApiModule
         return async (name, dto, productName, cancellationToken) =>
         {
             logger.LogInformation("Adding API {ApiName} to product {ProductName}...", name, productName);
+            
+            try {
+                await ProductApiUri.From(name, productName, serviceUri)
+                                   .PutDto(dto, pipeline, cancellationToken);
+            } catch (HttpRequestException httpRequestException) when (httpRequestException.Message.Contains("API not found", StringComparison.OrdinalIgnoreCase)){
+                logger.LogWarning("API {ApiName} not found, the API is NOT added to product in the target environment.", name);
+                return;
+            }
 
-            await ProductApiUri.From(name, productName, serviceUri)
-                               .PutDto(dto, pipeline, cancellationToken);
         };
     }
 
